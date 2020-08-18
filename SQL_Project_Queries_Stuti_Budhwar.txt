@@ -1,0 +1,77 @@
+Set1_Question1_POPULARITY OF MOVIES WITH THEIR CATEGORY BASED ON THE RENTAL COUNT
+
+/* query to list movies, their categories and rental count in descending order */
+SELECT f.title movie_title, c.name category,
+COUNT(r.rental_id) rental_count
+FROM category c
+JOIN film_category fc
+ON c.category_id=fc.category_id
+JOIN film f
+ON fc.film_id=f.film_id
+JOIN inventory i
+ON i.film_id=f.film_id
+JOIN rental r
+ON r.inventory_id=i.inventory_id
+WHERE c.name IN ('Animation','Children','Classics','Comedy','Family','Music')
+GROUP by 1,2
+ORDER by 2;
+
+
+Set1_Question2_POPULARITY OF MOVIES WITH THEIR CATEGORY BASED ON STANDARD QUARTILE
+
+/* query to list movies, categories and standard quatile based on rental count for family category movies*/
+SELECT movie_title, category,
+     rental_duration, standard_quartile
+
+/* query to list movies, categories and calculating standard quartile based on rental count for family category movies */
+FROM
+  (SELECT f.title movie_title, c.name category,
+      f.rental_duration rental_duration,
+      NTILE(4) OVER (ORDER BY rental_duration) AS standard_quartile
+      FROM category c
+      JOIN film_category fc
+      ON c.category_id=fc.category_id
+      JOIN film f
+      ON fc.film_id=f.film_id
+   WHERE c.name ='Animation' OR c.name 	='Children' OR c.name ='Classics' OR c.name ='Comedy' OR c.name ='Family' OR c.name ='Music')t1
+ ORDER BY 4, 3;
+
+
+Set2_Question1_MONTHLY RENTAL COUNT FOR THE 2 STORES FOR 2015-2016
+
+/* query to find rental count for both store ids 1 & 2 for month and year  */
+SELECT DATE_PART('month', r.rental_date) rental_month, DATE_PART('year', r.rental_date) rental_year,  COUNT(r.rental_id) rental_count, st.store_id
+FROM rental r
+JOIN staff s
+ON r.staff_id = s.staff_id
+JOIN store st
+ON s.store_id = st.store_id
+GROUP BY 1, 2, 4
+ORDER BY 3 DESC
+
+
+Set2_Question2_TOP 10 PAYING CUSTOMERS WITH MONTHLY COUNT AND AMOUNT OF PAYMENT
+
+/*query to find top 10 paying customers*/
+WITH Top10_Customer AS (
+  SELECT c.customer_id,
+  CONCAT(c.first_name, c.last_name) full_name,
+  SUM(amount) pay_amount
+  FROM payment p
+  JOIN customer c
+  on p.customer_id = c.customer_id
+  GROUP BY 1, 2
+  ORDER BY 3 DESC
+  LIMIT 10)
+  
+/*query to get top 10 paying customers with monthly count and amount of payment*/  
+SELECT date_trunc('month', p.payment_date) pay_month,
+Top10_customer.full_name,
+COUNT(p.payment_date) pay_countpermont,
+SUM(p.amount) pay_amount
+FROM payment p
+JOIN Top10_customer
+on Top10_customer.customer_id = p.customer_id
+GROUP BY 1, 2
+ORDER BY 2
+
